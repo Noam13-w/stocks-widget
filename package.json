@@ -11,10 +11,12 @@
   "main": "main.js",
   "scripts": {
     "start": "electron .",
+    "package": "electron-packager . \"Stocks Widget\" --platform=win32 --arch=x64 --out=dist --overwrite --asar --ignore=\"^/dist$\" --ignore=\"^/\\.git\" --app-version=1.0.0",
     "dist": "electron-builder --win",
     "pack": "electron-builder --dir"
   },
   "devDependencies": {
+    "@electron/packager": "^20.0.0",
     "electron": "^33.0.0",
     "electron-builder": "^25.1.8"
   },
@@ -29,8 +31,18 @@
     ],
     "win": {
       "target": [
-        { "target": "nsis", "arch": ["x64"] },
-        { "target": "portable", "arch": ["x64"] }
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
       ],
       "artifactName": "${productName}-${version}-${arch}-${ext}.${ext}"
     },
