@@ -1,0 +1,1363 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Stocks</title>
+<style>
+  /* ─── Theme tokens (dark only) ───────────────────────────────── */
+  :root {
+    --bg-1: rgba(14, 16, 22, 0.94);
+    --bg-2: rgba(22, 25, 33, 0.6);
+    --panel: rgba(255, 255, 255, 0.04);
+    --panel-hover: rgba(255, 255, 255, 0.06);
+    --panel-strong: rgba(255, 255, 255, 0.08);
+    --border: rgba(255, 255, 255, 0.08);
+    --border-strong: rgba(255, 255, 255, 0.14);
+    --text: #e9ecf1;
+    --text-dim: #b0b6c2;
+    --muted: #6b7280;
+    --muted-2: #4b5563;
+    --good: #22c55e;
+    --good-bg: rgba(34, 197, 94, 0.1);
+    --bad: #ef4444;
+    --bad-bg: rgba(239, 68, 68, 0.1);
+    --warn: #f59e0b;
+    --warn-bg: rgba(245, 158, 11, 0.1);
+    --accent: #3b82f6;
+    --accent-strong: #2563eb;
+    --shadow: 0 12px 48px rgba(0, 0, 0, 0.55);
+  }
+
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, system-ui, sans-serif;
+    color: var(--text); user-select: none; background: transparent; overflow: hidden;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ─── Card ──────────────────────────────────────────────────── */
+  .card {
+    margin: 0; background: var(--bg-1);
+    border: 1px solid var(--border); border-radius: 12px;
+    backdrop-filter: blur(24px) saturate(140%);
+    height: 100vh; display: flex; flex-direction: column; overflow: hidden;
+    color: var(--text);
+  }
+
+  .head {
+    -webkit-app-region: drag;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 9px 10px; border-bottom: 1px solid var(--border);
+    background: linear-gradient(180deg, rgba(255,255,255,0.02), transparent);
+  }
+  .brand { display: flex; align-items: center; gap: 8px; }
+  .brand-icon {
+    width: 18px; height: 18px;
+    background: linear-gradient(135deg, var(--good), var(--accent));
+    border-radius: 5px; display: flex; align-items: center; justify-content: center;
+    font-size: 11px; color: #fff; font-weight: 700;
+    box-shadow: 0 2px 8px rgba(34, 197, 94, 0.3);
+  }
+  .brand-title { font-size: 12px; font-weight: 600; letter-spacing: -0.01em; }
+  .actions { -webkit-app-region: no-drag; display: flex; gap: 2px; }
+
+  .icon-btn {
+    width: 24px; height: 24px; border-radius: 6px; border: none;
+    background: transparent; color: var(--muted);
+    cursor: pointer; font-size: 13px;
+    display: inline-flex; align-items: center; justify-content: center;
+    transition: all 0.12s ease;
+  }
+  .icon-btn:hover { background: var(--panel-hover); color: var(--text); }
+  .icon-btn:active { transform: scale(0.94); }
+  .icon-btn.active { color: var(--accent); background: rgba(59,130,246,0.1); }
+
+  /* ─── Tabs (watchlists) ──────────────────────────────────────── */
+  .tabs {
+    -webkit-app-region: no-drag;
+    display: flex; align-items: center;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-2);
+    padding: 4px 6px;
+    gap: 2px;
+    overflow-x: auto;
+  }
+  .tabs::-webkit-scrollbar { height: 0; }
+  .tab {
+    padding: 4px 10px; font-size: 11px; font-weight: 500;
+    border-radius: 6px; cursor: pointer; color: var(--text-dim);
+    transition: all 0.12s ease;
+    white-space: nowrap;
+    border: 1px solid transparent;
+    display: inline-flex; align-items: center; gap: 5px;
+  }
+  .tab:hover { background: var(--panel-hover); color: var(--text); }
+  .tab.active {
+    background: var(--panel-strong); color: var(--text);
+    border-color: var(--border-strong);
+  }
+  .tab .count {
+    font-size: 9px; color: var(--muted);
+    background: var(--panel); padding: 1px 4px; border-radius: 3px;
+  }
+  .tab-add {
+    margin-left: auto; padding: 4px 8px; font-size: 13px; line-height: 1;
+    border: 1px dashed var(--border-strong);
+    border-radius: 6px; cursor: pointer;
+    color: var(--muted);
+    transition: all 0.12s ease;
+    flex-shrink: 0;
+  }
+  .tab-add:hover { color: var(--accent); border-color: var(--accent); }
+
+  /* ─── Summary bar ────────────────────────────────────────────── */
+  .summary {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 6px 12px;
+    font-size: 10.5px; color: var(--text-dim);
+    background: var(--bg-2);
+    border-bottom: 1px solid var(--border);
+  }
+  .summary-stat { display: inline-flex; align-items: center; gap: 4px; }
+  .summary-stat b { font-weight: 600; font-variant-numeric: tabular-nums; color: var(--text); }
+  .summary-stat .up   { color: var(--good); }
+  .summary-stat .down { color: var(--bad); }
+  /* ─── List ──────────────────────────────────────────────────── */
+  .list-wrap { flex: 1; overflow-y: auto; padding: 4px 0; }
+  .list-wrap::-webkit-scrollbar { width: 6px; }
+  .list-wrap::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 3px; }
+  .row {
+    position: relative;
+    display: flex; align-items: center;
+    padding: 9px 12px; cursor: grab;
+    transition: background 0.12s ease;
+    border-radius: 8px; margin: 0 6px;
+  }
+  .row:hover { background: var(--panel); }
+  .row:active { cursor: grabbing; }
+  .row.dragging { opacity: 0.4; }
+  .row.drag-over { box-shadow: inset 0 2px 0 var(--accent); }
+  body.compact .row { padding: 5px 12px; }
+
+  .row-spark {
+    position: absolute; inset: 0;
+    pointer-events: none; opacity: 0.4; overflow: hidden; border-radius: 8px;
+  }
+  .row-spark svg { width: 100%; height: 100%; }
+
+  .row-content {
+    position: relative;
+    display: flex; align-items: center; justify-content: space-between;
+    width: 100%; z-index: 1;
+  }
+
+  .left { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+  .sym-row { display: flex; align-items: center; gap: 6px; }
+  .ms-dot {
+    width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0;
+  }
+  .ms-REGULAR { background: var(--good); box-shadow: 0 0 6px var(--good); }
+  .ms-CLOSED  { background: var(--muted); }
+  .ms-PRE, .ms-POST { background: var(--warn); box-shadow: 0 0 6px var(--warn); }
+
+  .sym { font-weight: 600; font-size: 13px; letter-spacing: -0.01em; }
+  .alert-badge {
+    font-size: 9px; padding: 1px 4px; border-radius: 3px;
+    background: var(--accent); color: #fff; margin-left: 4px;
+  }
+  .name {
+    font-size: 10.5px; color: var(--text-dim);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    max-width: 160px; margin-top: 1px;
+  }
+  body.compact .name { display: none; }
+
+  .right { text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+  .price {
+    font-weight: 600; font-size: 13px;
+    font-variant-numeric: tabular-nums; letter-spacing: -0.01em;
+    transition: color 0.4s ease;
+  }
+  .price.flash-up   { color: var(--good); }
+  .price.flash-down { color: var(--bad); }
+  .chg {
+    font-size: 11px; font-variant-numeric: tabular-nums;
+    display: inline-flex; align-items: center; gap: 3px;
+    padding: 1px 6px; border-radius: 4px;
+  }
+  .chg.up   { color: var(--good); background: var(--good-bg); }
+  .chg.down { color: var(--bad);  background: var(--bad-bg); }
+  .chg.flat { color: var(--muted); }
+
+  .ext {
+    margin-top: 4px; font-size: 10px; color: var(--text-dim);
+    display: inline-flex; align-items: center; gap: 4px;
+    font-variant-numeric: tabular-nums;
+  }
+  body.compact .ext { display: none; }
+  .ext .lbl {
+    color: var(--warn); font-weight: 600; font-size: 9px;
+    text-transform: uppercase; letter-spacing: 0.04em;
+    padding: 1px 4px; background: var(--warn-bg); border-radius: 3px;
+  }
+  .ext .ch.up   { color: var(--good); }
+  .ext .ch.down { color: var(--bad); }
+
+  .err-row { color: var(--bad); font-size: 10.5px; }
+
+  .del {
+    background: none; border: 0;
+    color: transparent; cursor: pointer;
+    font-size: 14px; margin-left: 8px; padding: 2px 5px;
+    border-radius: 4px; transition: all 0.12s ease;
+    flex-shrink: 0;
+  }
+  .row:hover .del { color: var(--muted); }
+  .del:hover { color: var(--bad); background: var(--bad-bg); }
+
+  .empty {
+    text-align: center; color: var(--muted); padding: 32px 16px;
+    font-size: 12px; line-height: 1.5;
+  }
+  .empty .empty-hint { font-size: 10.5px; opacity: 0.7; margin-top: 4px; }
+
+  /* ─── Add bar ──────────────────────────────────────────────── */
+  .add-bar {
+    position: relative; border-top: 1px solid var(--border);
+    padding: 9px 10px; display: flex; gap: 6px; background: var(--bg-2);
+  }
+  .add-bar input {
+    -webkit-app-region: no-drag;
+    flex: 1; background: var(--panel); border: 1px solid var(--border);
+    border-radius: 8px; color: var(--text);
+    padding: 7px 10px; font-size: 12px; outline: none;
+    text-transform: uppercase;
+    transition: all 0.12s ease; font-family: inherit;
+  }
+  .add-bar input:focus { border-color: var(--accent); background: rgba(59, 130, 246, 0.06); }
+  .add-bar input::placeholder { color: var(--muted); text-transform: none; }
+  .add-bar button {
+    -webkit-app-region: no-drag;
+    background: var(--accent); border: none; color: #fff;
+    border-radius: 8px; padding: 7px 14px;
+    cursor: pointer; font-size: 12px; font-weight: 600;
+    transition: all 0.12s ease;
+  }
+  .add-bar button:hover { background: var(--accent-strong); }
+  .add-bar button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* Suggest dropdown */
+  .suggest {
+    position: absolute; bottom: 100%; left: 10px; right: 10px;
+    background: var(--bg-1); border: 1px solid var(--border-strong);
+    border-radius: 10px; box-shadow: var(--shadow);
+    max-height: 220px; overflow-y: auto;
+    margin-bottom: 4px; display: none; z-index: 10;
+  }
+  .suggest.open { display: block; }
+  .suggest-item {
+    padding: 8px 10px; cursor: pointer;
+    border-bottom: 1px solid var(--border);
+    display: flex; justify-content: space-between; align-items: center; gap: 8px;
+  }
+  .suggest-item:last-child { border-bottom: none; }
+  .suggest-item:hover, .suggest-item.active { background: var(--panel-hover); }
+  .suggest-sym { font-weight: 600; font-size: 12px; }
+  .suggest-name { font-size: 10.5px; color: var(--text-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 180px; }
+  .suggest-tag {
+    font-size: 9px; color: var(--muted);
+    padding: 2px 5px; border-radius: 3px; background: var(--panel); flex-shrink: 0;
+  }
+
+  /* ─── Footer ──────────────────────────────────────────────── */
+  .footer {
+    border-top: 1px solid var(--border);
+    padding: 6px 12px; font-size: 10px; color: var(--muted);
+    display: flex; justify-content: space-between; align-items: center;
+    background: var(--bg-2);
+  }
+  .footer-left { display: flex; align-items: center; gap: 4px; }
+  .footer button {
+    -webkit-app-region: no-drag;
+    background: none; border: none; color: var(--muted); cursor: pointer;
+    font-size: 10px; padding: 2px 4px; border-radius: 3px;
+    transition: all 0.12s ease;
+  }
+  .footer button:hover { color: var(--text); background: var(--panel-hover); }
+  .live-dot {
+    width: 5px; height: 5px; border-radius: 50%;
+    background: var(--good); display: inline-block; margin-right: 4px;
+  }
+  .live-dot.stale { background: var(--muted); animation: none; }
+  .live-dot:not(.stale) { animation: pulse 2s ease-in-out infinite; }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.6); }
+    50% { opacity: 0.5; box-shadow: 0 0 0 4px rgba(34, 197, 94, 0); }
+  }
+
+  /* ─── Settings panel ──────────────────────────────────────── */
+  .panel {
+    position: absolute; inset: 0; background: var(--bg-1);
+    backdrop-filter: blur(24px); display: none; flex-direction: column;
+    z-index: 100; border-radius: 12px;
+  }
+  .panel.open { display: flex; }
+  .panel-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 12px; border-bottom: 1px solid var(--border);
+    -webkit-app-region: drag;
+  }
+  .panel-title { font-size: 12px; font-weight: 600; }
+  .panel-body { flex: 1; overflow-y: auto; padding: 12px; }
+  .back-btn {
+    -webkit-app-region: no-drag;
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--panel); color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 6px; padding: 4px 9px 4px 7px;
+    cursor: pointer; font-size: 11px; font-weight: 500;
+    transition: all 0.12s ease; font-family: inherit;
+  }
+  .back-btn:hover { background: var(--panel-hover); border-color: var(--border-strong); }
+  .back-btn .arrow { font-size: 13px; line-height: 1; }
+  .set-section { margin-bottom: 16px; }
+  .set-label {
+    font-size: 10px; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 0.05em;
+    margin-bottom: 6px; font-weight: 600;
+  }
+  .set-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 10px;
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 8px; margin-bottom: 4px;
+  }
+  .set-row-text { font-size: 12px; }
+  .set-row-hint { font-size: 10px; color: var(--muted); margin-top: 2px; }
+
+  /* Toggle */
+  .toggle {
+    position: relative; width: 32px; height: 18px;
+    background: var(--muted-2); border-radius: 9px;
+    cursor: pointer; transition: background 0.18s ease;
+  }
+  .toggle::after {
+    content: ''; position: absolute; top: 2px; left: 2px;
+    width: 14px; height: 14px; background: #fff; border-radius: 50%;
+    transition: transform 0.18s ease;
+  }
+  .toggle.on { background: var(--accent); }
+  .toggle.on::after { transform: translateX(14px); }
+
+  /* Theme/sort segmented control */
+  .seg {
+    display: flex; gap: 2px; background: var(--panel-strong);
+    border-radius: 7px; padding: 2px;
+  }
+  .seg button {
+    flex: 1; background: transparent; border: none; color: var(--text-dim);
+    cursor: pointer; padding: 5px 8px; font-size: 11px;
+    border-radius: 5px; transition: all 0.12s ease; font-family: inherit;
+  }
+  .seg button:hover { color: var(--text); }
+  .seg button.active { background: var(--bg-1); color: var(--text); box-shadow: 0 1px 2px rgba(0,0,0,0.2); }
+
+  .slider-row { padding: 10px; background: var(--panel); border: 1px solid var(--border); border-radius: 8px; }
+  .slider-row input[type=range] { width: 100%; accent-color: var(--accent); }
+  .slider-val { font-variant-numeric: tabular-nums; font-weight: 600; color: var(--accent); }
+
+  .kbd {
+    display: inline-block; padding: 1px 6px;
+    background: var(--panel); border: 1px solid var(--border-strong);
+    border-radius: 4px; font-size: 10px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace; margin: 0 2px;
+  }
+
+  .small-btn {
+    background: var(--panel); border: 1px solid var(--border);
+    color: var(--text); cursor: pointer; padding: 5px 10px;
+    border-radius: 6px; font-size: 11px;
+    transition: all 0.12s ease; font-family: inherit;
+  }
+  .small-btn:hover { background: var(--panel-hover); border-color: var(--border-strong); }
+  .small-btn.danger { color: var(--bad); border-color: var(--bad-bg); }
+  .small-btn.danger:hover { background: var(--bad-bg); }
+
+  /* ─── Chart ───────────────────────────────────────────────── */
+  .chart-wrap {
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 10px; padding: 10px; margin-bottom: 12px;
+    position: relative;
+  }
+  .chart-svg { width: 100%; height: 140px; display: block; }
+  .chart-svg .axis { stroke: var(--border); stroke-width: 1; stroke-dasharray: 2 3; }
+  .chart-svg .baseline { stroke: var(--muted); stroke-width: 1; stroke-dasharray: 4 3; opacity: 0.5; }
+  .chart-svg .area-up   { fill: rgba(34, 197, 94, 0.18); }
+  .chart-svg .area-down { fill: rgba(239, 68, 68, 0.18); }
+  .chart-svg .line-up   { stroke: #22c55e; }
+  .chart-svg .line-down { stroke: #ef4444; }
+  .chart-svg path.line { fill: none; stroke-width: 1.6; }
+  .chart-tabs {
+    display: flex; gap: 4px; margin-top: 8px; justify-content: center;
+  }
+  .chart-tab {
+    padding: 3px 10px; font-size: 10.5px; font-weight: 600;
+    background: transparent; border: 1px solid transparent;
+    color: var(--text-dim); border-radius: 5px; cursor: pointer;
+    transition: all 0.12s ease; font-family: inherit;
+  }
+  .chart-tab:hover { color: var(--text); }
+  .chart-tab.active { background: var(--panel-strong); color: var(--text); border-color: var(--border-strong); }
+  .chart-loading { font-size: 11px; color: var(--muted); text-align: center; padding: 60px 0; }
+  .chart-stats {
+    display: flex; justify-content: space-between; gap: 8px;
+    margin-top: 6px; font-size: 10px; color: var(--text-dim);
+    font-variant-numeric: tabular-nums;
+  }
+  .chart-stat b { color: var(--text); font-weight: 600; }
+  .chart-stat .up { color: var(--good); }
+  .chart-stat .down { color: var(--bad); }
+
+  /* ─── Detail panel ────────────────────────────────────────── */
+  .detail-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px;
+  }
+  .stat {
+    background: var(--panel); border: 1px solid var(--border);
+    padding: 8px 10px; border-radius: 8px;
+  }
+  .stat-label {
+    font-size: 9px; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600;
+  }
+  .stat-value {
+    font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums;
+    margin-top: 2px;
+  }
+  .range-row {
+    background: var(--panel); border: 1px solid var(--border);
+    padding: 10px; border-radius: 8px; margin-bottom: 8px;
+  }
+  .range-bar {
+    position: relative; height: 4px; background: var(--panel-strong);
+    border-radius: 2px; margin: 8px 0 4px;
+  }
+  .range-marker {
+    position: absolute; width: 8px; height: 8px; border-radius: 50%;
+    background: var(--accent); top: -2px;
+    transform: translateX(-50%);
+  }
+  .range-ends {
+    display: flex; justify-content: space-between;
+    font-size: 10px; color: var(--text-dim);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .alert-list { margin-top: 8px; }
+  .alert-item {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 6px 10px; background: var(--panel);
+    border: 1px solid var(--border); border-radius: 6px; margin-bottom: 4px;
+    font-size: 11px; font-variant-numeric: tabular-nums;
+  }
+  .alert-item .triggered { color: var(--muted); text-decoration: line-through; }
+  .alert-add {
+    display: flex; gap: 6px; margin-top: 8px;
+  }
+  .alert-add .seg { flex: 0 0 auto; }
+  .alert-add input {
+    flex: 1; background: var(--panel); border: 1px solid var(--border);
+    border-radius: 6px; padding: 5px 8px; font-size: 11px;
+    color: var(--text); outline: none; font-family: inherit;
+  }
+  .alert-add input:focus { border-color: var(--accent); }
+
+  /* ─── Context menu ────────────────────────────────────────── */
+  .ctx-menu {
+    position: fixed; z-index: 200;
+    background: var(--bg-1); border: 1px solid var(--border-strong);
+    border-radius: 8px; box-shadow: var(--shadow);
+    min-width: 160px; padding: 4px;
+    backdrop-filter: blur(20px) saturate(140%);
+  }
+  .ctx-item {
+    padding: 6px 10px; font-size: 11.5px; color: var(--text);
+    cursor: pointer; border-radius: 5px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .ctx-item:hover { background: var(--panel-hover); }
+  .ctx-item.danger { color: var(--bad); }
+  .ctx-item.danger:hover { background: var(--bad-bg); }
+  .ctx-sep { height: 1px; background: var(--border); margin: 4px 0; }
+
+  /* ─── Modal prompt ────────────────────────────────────────── */
+  .modal {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+    z-index: 300; display: none;
+    align-items: center; justify-content: center;
+  }
+  .modal.open { display: flex; }
+  .modal-card {
+    background: var(--bg-1); border: 1px solid var(--border-strong);
+    border-radius: 10px; padding: 16px; min-width: 240px;
+    box-shadow: var(--shadow);
+  }
+  .modal-title { font-size: 12px; font-weight: 600; margin-bottom: 10px; }
+  .modal-input {
+    width: 100%; background: var(--panel); border: 1px solid var(--border);
+    border-radius: 6px; padding: 7px 10px; font-size: 12px;
+    color: var(--text); outline: none; margin-bottom: 12px; font-family: inherit;
+  }
+  .modal-input:focus { border-color: var(--accent); }
+  .modal-actions { display: flex; gap: 6px; justify-content: flex-end; }
+
+  /* ─── Pill ────────────────────────────────────────────────── */
+  /* Pill uses Electron's built-in window dragging for reliability.
+     The whole bar is draggable; only the small expand button is no-drag. */
+  body.pill .card { display: none; }
+  body.pill .pill {
+    -webkit-app-region: drag;
+    display: flex; align-items: center;
+    margin: 0; height: 100vh;
+    background: var(--bg-1); border: 1px solid var(--border);
+    border-radius: 14px;
+    backdrop-filter: blur(20px) saturate(140%);
+    overflow: hidden; font-size: 11px; cursor: grab; gap: 8px;
+    color: var(--text);
+  }
+  body:not(.pill) .pill { display: none; }
+  .pill-content {
+    flex: 1; display: flex; align-items: center; gap: 8px;
+    padding: 0 4px 0 12px; overflow: hidden;
+  }
+  .pill-expand {
+    -webkit-app-region: no-drag;
+    width: 26px; height: 100%;
+    display: flex; align-items: center; justify-content: center;
+    background: transparent; border: none;
+    color: var(--muted); cursor: pointer; font-size: 14px;
+    border-left: 1px solid var(--border);
+    transition: all 0.12s ease;
+  }
+  .pill-expand:hover { background: var(--panel-hover); color: var(--text); }
+  .pill .item { display: inline-flex; align-items: center; gap: 4px; font-variant-numeric: tabular-nums; }
+  .pill .item .s { font-weight: 700; }
+  .pill .item .c.up   { color: var(--good); }
+  .pill .item .c.down { color: var(--bad); }
+  .pill .sep { color: var(--muted); opacity: 0.5; }
+</style>
+</head>
+<body>
+
+<!-- Pill -->
+<div class="pill" id="pill" title="Drag to move · Click chevron to expand">
+  <div class="pill-content" id="pillContent"></div>
+  <button class="pill-expand" id="pillExpand" title="Expand">⤢</button>
+</div>
+
+<!-- Full -->
+<div class="card">
+  <div class="head">
+    <div class="brand">
+      <div class="brand-icon">$</div>
+      <div class="brand-title">Stocks</div>
+    </div>
+    <div class="actions">
+      <button class="icon-btn" id="settingsBtn" title="Settings">⚙</button>
+      <button class="icon-btn" id="refreshBtn" title="Refresh">↻</button>
+      <button class="icon-btn" id="hideBtn" title="Collapse to bar">−</button>
+      <button class="icon-btn" id="closeBtn" title="Quit">×</button>
+    </div>
+  </div>
+
+  <div class="tabs" id="tabs"></div>
+  <div class="summary" id="summary"></div>
+
+  <div class="list-wrap" id="list">
+    <div class="empty"><div>Loading...</div></div>
+  </div>
+
+  <div class="add-bar">
+    <div class="suggest" id="suggest"></div>
+    <input id="newTicker" placeholder="Add ticker (e.g. AAPL, BTC-USD)" maxlength="14" autocomplete="off" />
+    <button id="addBtn">Add</button>
+  </div>
+
+  <div class="footer">
+    <span class="footer-left">
+      <span class="live-dot" id="liveDot"></span>
+      <span id="status">—</span>
+    </span>
+    <button id="settingsLink" title="Settings">⚙ Settings</button>
+  </div>
+
+  <!-- Settings overlay -->
+  <div class="panel" id="settings">
+    <div class="panel-head">
+      <button class="back-btn" id="closeSettings" title="Back (Esc)">
+        <span class="arrow">←</span><span>Back</span>
+      </button>
+      <div class="panel-title">Settings</div>
+      <div style="width:54px;"></div>
+    </div>
+    <div class="panel-body">
+
+      <div class="set-section">
+        <div class="set-label">Sort by</div>
+        <div class="seg" id="sortSeg">
+          <button data-sort="manual">Manual</button>
+          <button data-sort="symbol">Symbol</button>
+          <button data-sort="changeDesc">% ↓</button>
+          <button data-sort="changeAsc">% ↑</button>
+          <button data-sort="priceDesc">Price</button>
+        </div>
+      </div>
+
+      <div class="set-section">
+        <div class="set-label">Refresh interval</div>
+        <div class="slider-row">
+          <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:11px;">
+            <span>Every <span class="slider-val" id="refreshVal">15</span> seconds</span>
+            <span style="color:var(--muted);font-size:10px;">5–120s</span>
+          </div>
+          <input type="range" id="refreshSlider" min="5" max="120" step="5" value="15" />
+        </div>
+      </div>
+
+      <div class="set-section">
+        <div class="set-label">Display</div>
+        <div class="set-row">
+          <div>
+            <div class="set-row-text">Compact mode</div>
+            <div class="set-row-hint">Denser rows, hide names &amp; extended info</div>
+          </div>
+          <div class="toggle" id="toggleCompact"></div>
+        </div>
+        <div class="set-row">
+          <div>
+            <div class="set-row-text">Sparkline charts</div>
+            <div class="set-row-hint">Show intraday trend in each row</div>
+          </div>
+          <div class="toggle" id="toggleSpark"></div>
+        </div>
+        <div class="set-row">
+          <div>
+            <div class="set-row-text">Extended hours</div>
+            <div class="set-row-hint">Show pre-market &amp; after-hours info</div>
+          </div>
+          <div class="toggle" id="toggleExt"></div>
+        </div>
+      </div>
+
+      <div class="set-section">
+        <div class="set-label">Backup</div>
+        <div class="set-row">
+          <div>
+            <div class="set-row-text">Export config</div>
+            <div class="set-row-hint">Save watchlists &amp; settings to a JSON file</div>
+          </div>
+          <button class="small-btn" id="exportBtn">Export</button>
+        </div>
+        <div class="set-row">
+          <div>
+            <div class="set-row-text">Import config</div>
+            <div class="set-row-hint">Replace current settings from a JSON file</div>
+          </div>
+          <button class="small-btn" id="importBtn">Import</button>
+        </div>
+      </div>
+
+      <div class="set-section">
+        <div class="set-label">Keyboard shortcuts</div>
+        <div class="set-row" style="display:block;">
+          <div style="display:flex;justify-content:space-between;padding:4px 0;font-size:11px;">
+            <span>Toggle widget (global)</span>
+            <span><span class="kbd">Ctrl</span><span class="kbd">Shift</span><span class="kbd">S</span></span>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:4px 0;font-size:11px;">
+            <span>Add ticker</span>
+            <span><span class="kbd">Enter</span></span>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:4px 0;font-size:11px;">
+            <span>Close panel</span>
+            <span><span class="kbd">Esc</span></span>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:4px 0;font-size:11px;">
+            <span>Right-click row</span>
+            <span style="color:var(--muted);">for actions</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="set-section" style="margin-bottom:0;">
+        <div class="set-label">About</div>
+        <div class="set-row" style="display:block;">
+          <div class="set-row-text">Stocks Widget v1.0</div>
+          <div class="set-row-hint" style="margin-top:4px;">Live prices via Yahoo Finance. Quit from the tray icon.</div>
+          <div class="set-row-hint" style="margin-top:8px;">
+            Built by <a href="#" id="creditLink" style="color:var(--accent);text-decoration:none;font-weight:600;">Noam Nissan</a>
+            · <a href="#" id="creditLink2" style="color:var(--text-dim);text-decoration:none;">LinkedIn ↗</a>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Detail overlay -->
+  <div class="panel" id="detail">
+    <div class="panel-head">
+      <button class="back-btn" id="closeDetail" title="Back (Esc)">
+        <span class="arrow">←</span><span>Back</span>
+      </button>
+      <div class="panel-title" id="detailTitle">—</div>
+      <div style="width:54px;"></div>
+    </div>
+    <div class="panel-body" id="detailBody">—</div>
+  </div>
+</div>
+
+<!-- Floating context menu + modal (outside the card) -->
+<div class="ctx-menu" id="ctxMenu" style="display:none;"></div>
+<div class="modal" id="modal">
+  <div class="modal-card">
+    <div class="modal-title" id="modalTitle">Title</div>
+    <input class="modal-input" id="modalInput" type="text" />
+    <div class="modal-actions">
+      <button class="small-btn" id="modalCancel">Cancel</button>
+      <button class="small-btn" id="modalOk" style="background:var(--accent);color:#fff;border-color:var(--accent);">OK</button>
+    </div>
+  </div>
+</div>
+
+<script>
+window.addEventListener('error', (e) => { console.error('WINDOW ERROR:', e.message, e.filename, e.lineno, e.colno, e.error?.stack); });
+window.addEventListener('unhandledrejection', (e) => { console.error('UNHANDLED REJECTION:', e.reason?.stack || e.reason); });
+const $ = (id) => document.getElementById(id);
+const fmt = (n, d = 2) => (n == null || isNaN(n)) ? '—' : Number(n).toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d });
+const fmtVol = (n) => {
+  if (n == null) return '—';
+  if (n >= 1e9) return (n/1e9).toFixed(2) + 'B';
+  if (n >= 1e6) return (n/1e6).toFixed(2) + 'M';
+  if (n >= 1e3) return (n/1e3).toFixed(1) + 'K';
+  return String(n);
+};
+const curSym = (c) => ({ USD: '$', EUR: '€', GBP: '£', ILS: '₪', JPY: '¥', INR: '₹' }[c] || (c ? c + ' ' : ''));
+const dirClass = (n) => n > 0 ? 'up' : n < 0 ? 'down' : 'flat';
+const arrow = (n) => n > 0 ? '▲' : n < 0 ? '▼' : '·';
+const escapeHtml = (s) => String(s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+let cfg = { showSparkline: true, showExtendedHours: true, refreshSec: 15, compactMode: false, sortBy: 'manual', watchlists: { Default: [] }, activeWatchlist: 'Default', alerts: {} };
+let lastQuotesArr = [];
+let lastQuotesMap = {};
+let detailSym = null;
+let dragSym = null;
+
+// ─── Sparkline ───────────────────────────────────────────────────
+function sparkSVG(points, isUp) {
+  if (!points || points.length < 2) return '';
+  const w = 100, h = 100;
+  const min = Math.min(...points), max = Math.max(...points);
+  const range = (max - min) || 1;
+  const stepX = w / (points.length - 1);
+  let d = '';
+  points.forEach((p, i) => {
+    const x = i * stepX;
+    const y = h - ((p - min) / range) * h;
+    d += (i === 0 ? 'M' : 'L') + x.toFixed(1) + ',' + y.toFixed(1) + ' ';
+  });
+  const color = isUp ? '#22c55e' : '#ef4444';
+  return `<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none"><path d="${d}" fill="none" stroke="${color}" stroke-width="1.5" opacity="0.7" /></svg>`;
+}
+
+// ─── Sort ────────────────────────────────────────────────────────
+function applySort(quotes) {
+  if (cfg.sortBy === 'symbol') return [...quotes].sort((a,b) => a.symbol.localeCompare(b.symbol));
+  if (cfg.sortBy === 'changeDesc') return [...quotes].sort((a,b) => (b.changePct ?? -Infinity) - (a.changePct ?? -Infinity));
+  if (cfg.sortBy === 'changeAsc')  return [...quotes].sort((a,b) => (a.changePct ?? Infinity) - (b.changePct ?? Infinity));
+  if (cfg.sortBy === 'priceDesc')  return [...quotes].sort((a,b) => (b.price ?? -Infinity) - (a.price ?? -Infinity));
+  return quotes;
+}
+
+// ─── Tabs (watchlists) ───────────────────────────────────────────
+function renderTabs() {
+  const names = Object.keys(cfg.watchlists);
+  $('tabs').innerHTML = names.map(name => `
+    <div class="tab ${name === cfg.activeWatchlist ? 'active' : ''}" data-name="${escapeHtml(name)}">
+      <span>${escapeHtml(name)}</span>
+      <span class="count">${cfg.watchlists[name].length}</span>
+    </div>
+  `).join('') + `<div class="tab-add" id="tabAdd" title="New watchlist">+</div>`;
+
+  $('tabs').querySelectorAll('.tab').forEach(el => {
+    el.onclick = () => {
+      if (el.dataset.name === cfg.activeWatchlist) return;
+      window.widget.switchWatchlist(el.dataset.name);
+    };
+    el.oncontextmenu = (e) => {
+      e.preventDefault();
+      showCtx(e.clientX, e.clientY, [
+        { label: 'Rename', action: () => promptModal('Rename watchlist', el.dataset.name, (v) => v && window.widget.renameWatchlist(el.dataset.name, v)) },
+        { label: 'Delete', danger: true, action: () => window.widget.deleteWatchlist(el.dataset.name) },
+      ]);
+    };
+  });
+  $('tabAdd').onclick = () => promptModal('New watchlist', '', (v) => v && window.widget.createWatchlist(v));
+}
+
+// ─── Summary ─────────────────────────────────────────────────────
+function renderSummary(quotes) {
+  const valid = quotes.filter(q => !q.error && q.changePct != null);
+  if (!valid.length) { $('summary').style.display = 'none'; return; }
+  $('summary').style.display = 'flex';
+  const up = valid.filter(q => q.change > 0).length;
+  const down = valid.filter(q => q.change < 0).length;
+  const avg = valid.reduce((s,q) => s + q.changePct, 0) / valid.length;
+  const top = [...valid].sort((a,b) => b.changePct - a.changePct)[0];
+  const bot = [...valid].sort((a,b) => a.changePct - b.changePct)[0];
+  $('summary').innerHTML = `
+    <span class="summary-stat"><span class="up">▲${up}</span> · <span class="down">▼${down}</span></span>
+    <span class="summary-stat">Avg <b class="${avg >= 0 ? 'up' : 'down'}">${avg >= 0 ? '+' : ''}${avg.toFixed(2)}%</b></span>
+    <span class="summary-stat" title="Top gainer">↑${top.symbol} <b class="up">${top.changePct >= 0 ? '+' : ''}${top.changePct.toFixed(1)}%</b></span>
+    <span class="summary-stat" title="Top loser">↓${bot.symbol} <b class="down">${bot.changePct >= 0 ? '+' : ''}${bot.changePct.toFixed(1)}%</b></span>
+  `;
+}
+
+// ─── List render ─────────────────────────────────────────────────
+function render(quotes) {
+  const sorted = applySort(quotes);
+  if (!quotes.length) {
+    $('list').innerHTML = `<div class="empty">
+      <div>No tickers in this watchlist</div>
+      <div class="empty-hint">Add a symbol below to get started</div>
+    </div>`;
+    $('pillContent').innerHTML = '<span style="color:var(--muted)">No tickers</span>';
+    renderSummary([]);
+    return;
+  }
+
+  $('list').innerHTML = sorted.map(q => {
+    if (q.error) {
+      return `<div class="row" data-sym="${escapeHtml(q.symbol)}">
+        <div class="row-content">
+          <div class="left">
+            <div class="sym-row"><div class="sym">${escapeHtml(q.symbol)}</div></div>
+            <div class="name err-row">${escapeHtml(q.error)}</div>
+          </div>
+          <button class="del" data-sym="${escapeHtml(q.symbol)}" title="Remove">×</button>
+        </div>
+      </div>`;
+    }
+
+    const cls = dirClass(q.change);
+    const showSpark = cfg.showSparkline && q.sparkline && q.sparkline.length > 1;
+    const spark = showSpark ? `<div class="row-spark">${sparkSVG(q.sparkline, q.change >= 0)}</div>` : '';
+    const alertCount = (cfg.alerts[q.symbol] || []).filter(a => !a.triggered).length;
+    const alertBadge = alertCount ? `<span class="alert-badge" title="${alertCount} active alert${alertCount>1?'s':''}">⚑ ${alertCount}</span>` : '';
+
+    const extLabel = q.extended
+      ? (q.extended.label === 'After Hours' ? 'After' : q.extended.label === 'At Close' ? 'Close' : q.extended.label)
+      : '';
+    const ext = (cfg.showExtendedHours && q.extended)
+      ? `<div class="ext" title="${escapeHtml(q.extended.label)}">
+          <span class="lbl">${extLabel}</span>
+          <span>${curSym(q.currency)}${fmt(q.extended.price)}</span>
+          <span class="ch ${dirClass(q.extended.change)}">${arrow(q.extended.change)} ${fmt(q.extended.changePct)}%</span>
+        </div>` : '';
+
+    const prev = lastQuotesMap[q.symbol];
+    let flash = '';
+    if (prev && prev.price != null && q.price != null) {
+      if (q.price > prev.price) flash = 'flash-up';
+      else if (q.price < prev.price) flash = 'flash-down';
+    }
+
+    return `<div class="row" data-sym="${escapeHtml(q.symbol)}" draggable="${cfg.sortBy === 'manual'}">
+      ${spark}
+      <div class="row-content">
+        <div class="left">
+          <div class="sym-row">
+            <div class="ms-dot ms-${q.marketState || 'CLOSED'}" title="${q.marketState || ''}"></div>
+            <div class="sym">${escapeHtml(q.symbol)}</div>
+            ${alertBadge}
+          </div>
+          <div class="name">${escapeHtml(q.name || '')}</div>
+          ${ext}
+        </div>
+        <div class="right">
+          <div class="price ${flash}">${curSym(q.currency)}${fmt(q.price)}</div>
+          <div class="chg ${cls}">${arrow(q.change)} ${fmt(q.change)} (${fmt(q.changePct)}%)</div>
+        </div>
+        <button class="del" data-sym="${escapeHtml(q.symbol)}" title="Remove">×</button>
+      </div>
+    </div>`;
+  }).join('');
+
+  // Pill
+  const valid = quotes.filter(q => !q.error);
+  $('pillContent').innerHTML = valid.length
+    ? valid.slice(0, 3).map(q => {
+        const cls = dirClass(q.change);
+        return `<span class="item"><span class="s">${escapeHtml(q.symbol)}</span><span class="c ${cls}">${arrow(q.change)}${fmt(q.changePct, 1)}%</span></span>`;
+      }).join('<span class="sep">·</span>')
+    : '<span style="color:var(--muted)">—</span>';
+
+  lastQuotesMap = {};
+  quotes.forEach(q => { if (!q.error) lastQuotesMap[q.symbol] = q; });
+
+  renderSummary(quotes);
+  bindRowEvents();
+
+  setTimeout(() => {
+    document.querySelectorAll('.price.flash-up, .price.flash-down').forEach(el => {
+      el.classList.remove('flash-up', 'flash-down');
+    });
+  }, 400);
+}
+
+function bindRowEvents() {
+  // Wire delete buttons separately so their clicks don't open the detail panel
+  document.querySelectorAll('.row .del').forEach(b => {
+    b.onclick = (e) => { e.stopPropagation(); window.widget.removeTicker(b.dataset.sym); };
+  });
+  document.querySelectorAll('.row').forEach(row => {
+    const sym = row.dataset.sym;
+
+    // Click → detail (ignore clicks on the delete button)
+    row.addEventListener('click', (e) => {
+      if (e.target.closest('.del')) return;
+      if (row.classList.contains('dragging')) return;
+      openDetail(sym);
+    });
+
+    // Right-click → context menu
+    row.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+      const q = lastQuotesMap[sym];
+      showCtx(e.clientX, e.clientY, [
+        { label: 'Open details', action: () => openDetail(sym) },
+        { label: 'Set price alert', action: () => { openDetail(sym); setTimeout(() => $('alertPrice')?.focus(), 100); } },
+        { label: 'Copy symbol', action: () => navigator.clipboard.writeText(sym) },
+        { label: 'View on Yahoo Finance', action: () => window.widget.openExternal('https://finance.yahoo.com/quote/' + encodeURIComponent(sym)) },
+        { sep: true },
+        { label: 'Remove from list', danger: true, action: () => window.widget.removeTicker(sym) },
+      ]);
+    });
+
+    // Drag-to-reorder (only when sortBy is manual)
+    if (cfg.sortBy === 'manual') {
+      row.addEventListener('dragstart', (e) => {
+        dragSym = sym;
+        row.classList.add('dragging');
+        e.dataTransfer.effectAllowed = 'move';
+      });
+      row.addEventListener('dragend', () => { row.classList.remove('dragging'); dragSym = null; });
+      row.addEventListener('dragover', (e) => { e.preventDefault(); row.classList.add('drag-over'); });
+      row.addEventListener('dragleave', () => row.classList.remove('drag-over'));
+      row.addEventListener('drop', (e) => {
+        e.preventDefault(); row.classList.remove('drag-over');
+        const target = sym;
+        if (!dragSym || dragSym === target) return;
+        const list = Array.from(document.querySelectorAll('.row[draggable="true"]')).map(r => r.dataset.sym);
+        const from = list.indexOf(dragSym);
+        const to = list.indexOf(target);
+        if (from < 0 || to < 0) return;
+        list.splice(to, 0, list.splice(from, 1)[0]);
+        window.widget.reorderTickers(list);
+      });
+    }
+  });
+}
+
+// ─── Context menu ────────────────────────────────────────────────
+function showCtx(x, y, items) {
+  const menu = $('ctxMenu');
+  menu.innerHTML = items.map((it, i) => it.sep
+    ? `<div class="ctx-sep"></div>`
+    : `<div class="ctx-item ${it.danger ? 'danger' : ''}" data-i="${i}">${escapeHtml(it.label)}</div>`
+  ).join('');
+  menu.style.display = 'block';
+  // Position with viewport clamping
+  const rect = menu.getBoundingClientRect();
+  const vw = window.innerWidth, vh = window.innerHeight;
+  menu.style.left = Math.min(x, vw - rect.width - 4) + 'px';
+  menu.style.top  = Math.min(y, vh - rect.height - 4) + 'px';
+  menu.querySelectorAll('.ctx-item').forEach(el => {
+    el.onclick = () => {
+      items[+el.dataset.i].action();
+      hideCtx();
+    };
+  });
+}
+function hideCtx() { $('ctxMenu').style.display = 'none'; }
+document.addEventListener('click', hideCtx);
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') hideCtx(); });
+
+// ─── Detail panel ────────────────────────────────────────────────
+function openDetail(sym) {
+  detailSym = sym;
+  $('settings').classList.remove('open');
+  $('detail').classList.add('open');
+  renderDetail();
+}
+function renderDetail() {
+  if (!detailSym) return;
+  const q = lastQuotesMap[detailSym];
+  if (!q) {
+    $('detailTitle').textContent = detailSym;
+    $('detailBody').innerHTML = '<div class="empty">Loading...</div>';
+    return;
+  }
+  $('detailTitle').textContent = q.symbol;
+
+  const range52 = (q.fiftyTwoWeekLow != null && q.fiftyTwoWeekHigh != null && q.price != null)
+    ? Math.min(100, Math.max(0, ((q.price - q.fiftyTwoWeekLow) / (q.fiftyTwoWeekHigh - q.fiftyTwoWeekLow)) * 100))
+    : null;
+  const rangeDay = (q.dayLow != null && q.dayHigh != null && q.price != null)
+    ? Math.min(100, Math.max(0, ((q.price - q.dayLow) / (q.dayHigh - q.dayLow)) * 100))
+    : null;
+
+  const cls = dirClass(q.change);
+  const alerts = cfg.alerts[detailSym] || [];
+
+  $('detailBody').innerHTML = `
+    <div style="margin-bottom:14px;">
+      <div style="font-size:11px;color:var(--text-dim);">${escapeHtml(q.name || '')}</div>
+      <div style="font-size:24px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-0.02em;margin-top:2px;">
+        ${curSym(q.currency)}${fmt(q.price)}
+      </div>
+      <div class="chg ${cls}" style="font-size:12px;margin-top:4px;">
+        ${arrow(q.change)} ${fmt(q.change)} (${fmt(q.changePct)}%)
+      </div>
+    </div>
+
+    <div class="chart-wrap">
+      <div id="chartContainer"><div class="chart-loading">Loading chart...</div></div>
+      <div class="chart-stats" id="chartStats"></div>
+      <div class="chart-tabs" id="chartTabs">
+        <button class="chart-tab active" data-r="1D">1D</button>
+        <button class="chart-tab" data-r="5D">5D</button>
+        <button class="chart-tab" data-r="1M">1M</button>
+        <button class="chart-tab" data-r="3M">3M</button>
+        <button class="chart-tab" data-r="1Y">1Y</button>
+      </div>
+    </div>
+
+    ${rangeDay != null ? `<div class="range-row">
+      <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;font-weight:600;">Day's Range</div>
+      <div class="range-bar"><div class="range-marker" style="left:${rangeDay}%;"></div></div>
+      <div class="range-ends"><span>${fmt(q.dayLow)}</span><span>${fmt(q.dayHigh)}</span></div>
+    </div>` : ''}
+
+    ${range52 != null ? `<div class="range-row">
+      <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;font-weight:600;">52-Week Range</div>
+      <div class="range-bar"><div class="range-marker" style="left:${range52}%;"></div></div>
+      <div class="range-ends"><span>${fmt(q.fiftyTwoWeekLow)}</span><span>${fmt(q.fiftyTwoWeekHigh)}</span></div>
+    </div>` : ''}
+
+    <div class="detail-grid">
+      <div class="stat"><div class="stat-label">Previous Close</div><div class="stat-value">${curSym(q.currency)}${fmt(q.previousClose)}</div></div>
+      <div class="stat"><div class="stat-label">Volume</div><div class="stat-value">${fmtVol(q.volume)}</div></div>
+      <div class="stat"><div class="stat-label">Currency</div><div class="stat-value">${escapeHtml(q.currency || '—')}</div></div>
+      <div class="stat"><div class="stat-label">Exchange</div><div class="stat-value" style="font-size:11px;">${escapeHtml(q.exchange || '—')}</div></div>
+    </div>
+
+    ${q.extended ? `<div class="set-section">
+      <div class="set-label">${escapeHtml(q.extended.label)}</div>
+      <div class="set-row" style="display:block;">
+        <div style="font-size:14px;font-weight:600;font-variant-numeric:tabular-nums;">${curSym(q.currency)}${fmt(q.extended.price)}</div>
+        <div class="chg ${dirClass(q.extended.change)}" style="font-size:11px;margin-top:3px;display:inline-flex;">
+          ${arrow(q.extended.change)} ${fmt(q.extended.change)} (${fmt(q.extended.changePct)}%)
+        </div>
+      </div>
+    </div>` : ''}
+
+    <div class="set-section">
+      <div class="set-label">Price Alerts</div>
+      <div class="alert-list">
+        ${alerts.length === 0 ? '<div style="font-size:11px;color:var(--muted);padding:6px 0;">No alerts set</div>' : ''}
+        ${alerts.map(a => `<div class="alert-item">
+          <span class="${a.triggered ? 'triggered' : ''}">
+            ${a.type === 'above' ? '↑ Above' : '↓ Below'} ${curSym(q.currency)}${fmt(a.price)}
+            ${a.triggered ? ' · triggered' : ''}
+          </span>
+          <button class="icon-btn" data-aid="${escapeHtml(a.id)}" title="Delete">×</button>
+        </div>`).join('')}
+      </div>
+      <div class="alert-add">
+        <div class="seg" id="alertTypeSeg">
+          <button data-type="above" class="active">↑ Above</button>
+          <button data-type="below">↓ Below</button>
+        </div>
+        <input id="alertPrice" type="number" step="0.01" placeholder="Price" />
+        <button class="small-btn" id="alertAddBtn" style="background:var(--accent);color:#fff;border-color:var(--accent);">Add</button>
+      </div>
+    </div>
+
+    <div class="set-section" style="margin-bottom:0;">
+      <button class="small-btn" id="openYahoo" style="width:100%;">View on Yahoo Finance ↗</button>
+    </div>
+  `;
+
+  $('detailBody').querySelectorAll('.alert-item button').forEach(b => {
+    b.onclick = () => window.widget.removeAlert(detailSym, b.dataset.aid);
+  });
+  let alertType = 'above';
+  $('alertTypeSeg').querySelectorAll('button').forEach(b => {
+    b.onclick = () => {
+      alertType = b.dataset.type;
+      $('alertTypeSeg').querySelectorAll('button').forEach(x => x.classList.toggle('active', x === b));
+    };
+  });
+  $('alertAddBtn').onclick = () => {
+    const price = parseFloat($('alertPrice').value);
+    if (!isNaN(price) && price > 0) {
+      window.widget.addAlert(detailSym, alertType, price);
+      $('alertPrice').value = '';
+    }
+  };
+  $('alertPrice').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('alertAddBtn').click(); });
+  $('openYahoo').onclick = () => window.widget.openExternal('https://finance.yahoo.com/quote/' + encodeURIComponent(detailSym));
+
+  // Chart
+  let activeRange = '1D';
+  $('chartTabs').querySelectorAll('.chart-tab').forEach(b => {
+    b.onclick = () => {
+      $('chartTabs').querySelectorAll('.chart-tab').forEach(x => x.classList.toggle('active', x === b));
+      activeRange = b.dataset.r;
+      loadChart(detailSym, activeRange);
+    };
+  });
+  loadChart(detailSym, activeRange);
+}
+
+// Track in-flight chart loads to avoid stale renders if user clicks tabs fast
+let chartReqId = 0;
+async function loadChart(sym, range) {
+  const myId = ++chartReqId;
+  const container = $('chartContainer');
+  if (container) container.innerHTML = '<div class="chart-loading">Loading chart...</div>';
+  if ($('chartStats')) $('chartStats').innerHTML = '';
+  const data = await window.widget.fetchChart(sym, range);
+  if (myId !== chartReqId) return; // user moved on
+  if (!container) return;
+  if (data.error) {
+    container.innerHTML = `<div class="chart-loading" style="color:var(--bad);">Failed to load: ${escapeHtml(data.error)}</div>`;
+    return;
+  }
+  // Filter out null gaps but keep their indexed timestamps
+  const pairs = [];
+  for (let i = 0; i < data.closes.length; i++) {
+    if (data.closes[i] != null) pairs.push({ t: data.timestamps[i], v: data.closes[i] });
+  }
+  if (pairs.length < 2) {
+    container.innerHTML = '<div class="chart-loading">No data for this range</div>';
+    return;
+  }
+  container.innerHTML = renderChartSVG(pairs, data.previousClose, range);
+  // Stats
+  const first = pairs[0].v, last = pairs[pairs.length - 1].v;
+  const min = Math.min(...pairs.map(p => p.v));
+  const max = Math.max(...pairs.map(p => p.v));
+  const chg = last - first;
+  const chgPct = first ? (chg / first) * 100 : 0;
+  $('chartStats').innerHTML = `
+    <span class="chart-stat">Range <b class="${chg >= 0 ? 'up' : 'down'}">${chg >= 0 ? '+' : ''}${chgPct.toFixed(2)}%</b></span>
+    <span class="chart-stat">Low <b>${fmt(min)}</b></span>
+    <span class="chart-stat">High <b>${fmt(max)}</b></span>
+  `;
+}
+
+function renderChartSVG(pairs, prevClose, range) {
+  const W = 300, H = 140, padX = 4, padY = 8;
+  const values = pairs.map(p => p.v);
+  let min = Math.min(...values), max = Math.max(...values);
+  // Include previousClose in min/max so the baseline is visible
+  if (prevClose != null) { min = Math.min(min, prevClose); max = Math.max(max, prevClose); }
+  const span = (max - min) || 1;
+  // Add 5% headroom
+  min -= span * 0.05; max += span * 0.05;
+  const range2 = (max - min) || 1;
+
+  const stepX = (W - padX * 2) / (pairs.length - 1);
+  const xy = pairs.map((p, i) => {
+    const x = padX + i * stepX;
+    const y = padY + (H - padY * 2) * (1 - (p.v - min) / range2);
+    return [x, y];
+  });
+
+  const last = pairs[pairs.length - 1].v;
+  const first = pairs[0].v;
+  const isUp = last >= first;
+  const lineCls  = isUp ? 'line-up'  : 'line-down';
+  const areaCls  = isUp ? 'area-up'  : 'area-down';
+
+  const linePath = xy.map(([x, y], i) => (i === 0 ? 'M' : 'L') + x.toFixed(1) + ',' + y.toFixed(1)).join(' ');
+  const areaPath = linePath + ` L${xy[xy.length-1][0].toFixed(1)},${(H - padY).toFixed(1)} L${xy[0][0].toFixed(1)},${(H - padY).toFixed(1)} Z`;
+
+  // Baseline (prevClose for 1D, otherwise first value)
+  const baseVal = (range === '1D' && prevClose != null) ? prevClose : first;
+  const baseY = padY + (H - padY * 2) * (1 - (baseVal - min) / range2);
+
+  return `<svg class="chart-svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">
+    <line class="baseline" x1="${padX}" x2="${W - padX}" y1="${baseY.toFixed(1)}" y2="${baseY.toFixed(1)}" />
+    <path class="${areaCls}" d="${areaPath}" />
+    <path class="line ${lineCls}" d="${linePath}" />
+  </svg>`;
+}
+
+// ─── Modal prompt ────────────────────────────────────────────────
+function promptModal(title, initial, cb) {
+  $('modalTitle').textContent = title;
+  $('modalInput').value = initial || '';
+  $('modal').classList.add('open');
+  setTimeout(() => $('modalInput').focus(), 50);
+  const close = () => { $('modal').classList.remove('open'); };
+  $('modalCancel').onclick = close;
+  $('modalOk').onclick = () => { cb($('modalInput').value.trim()); close(); };
+  $('modalInput').onkeydown = (e) => {
+    if (e.key === 'Enter') $('modalOk').click();
+    else if (e.key === 'Escape') close();
+  };
+}
+
+// ─── IPC ─────────────────────────────────────────────────────────
+window.widget.onConfig((c) => {
+  cfg = c;
+
+  // Settings UI sync
+  $('refreshSlider').value = c.refreshSec;
+  $('refreshVal').textContent = c.refreshSec;
+  $('toggleSpark').classList.toggle('on', c.showSparkline);
+  $('toggleExt').classList.toggle('on', c.showExtendedHours);
+  $('toggleCompact').classList.toggle('on', c.compactMode);
+  document.body.classList.toggle('compact', c.compactMode);
+  $('sortSeg').querySelectorAll('button').forEach(b => b.classList.toggle('active', b.dataset.sort === c.sortBy));
+
+  renderTabs();
+  if (lastQuotesArr.length) render(lastQuotesArr);
+  if (detailSym) renderDetail();
+});
+
+window.widget.onQuotes(({ quotes, ts }) => {
+  lastQuotesArr = quotes;
+  render(quotes);
+  if (detailSym) renderDetail();
+  const t = new Date(ts);
+  $('status').textContent = 'Updated ' + t.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+  $('liveDot').classList.remove('stale');
+});
+window.widget.onError((msg) => {
+  $('status').textContent = 'Error: ' + msg;
+  $('liveDot').classList.add('stale');
+});
+window.widget.onMode((mode) => document.body.classList.toggle('pill', mode === 'pill'));
+
+// ─── Header buttons ──────────────────────────────────────────────
+$('refreshBtn').onclick = () => window.widget.refresh();
+$('hideBtn').onclick    = () => window.widget.hide();
+$('closeBtn').onclick   = () => window.widget.close();
+$('settingsBtn').onclick = () => { $('detail').classList.remove('open'); $('settings').classList.add('open'); };
+$('settingsLink').onclick = () => $('settings').classList.add('open');
+$('closeSettings').onclick = () => $('settings').classList.remove('open');
+$('closeDetail').onclick = () => { $('detail').classList.remove('open'); detailSym = null; };
+$('pillExpand').onclick = () => window.widget.expand();
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    if ($('modal').classList.contains('open')) return;
+    if ($('detail').classList.contains('open')) { $('detail').classList.remove('open'); detailSym = null; }
+    else if ($('settings').classList.contains('open')) $('settings').classList.remove('open');
+  }
+});
+
+// ─── Add ticker + autocomplete ──────────────────────────────────
+let searchTimer = null, activeSuggest = -1;
+function closeSuggest() { $('suggest').classList.remove('open'); $('suggest').innerHTML = ''; activeSuggest = -1; }
+function pickSuggest(sym) {
+  if (!sym) return;
+  window.widget.addTicker(sym);
+  $('newTicker').value = '';
+  closeSuggest();
+}
+async function runSearch(q) {
+  if (!q || q.length < 1) return closeSuggest();
+  const results = await window.widget.search(q);
+  if (!results.length) return closeSuggest();
+  $('suggest').innerHTML = results.map((r, i) => `
+    <div class="suggest-item" data-sym="${escapeHtml(r.symbol)}" data-idx="${i}">
+      <div class="suggest-left">
+        <div class="suggest-sym">${escapeHtml(r.symbol)}</div>
+        <div class="suggest-name">${escapeHtml(r.name)}</div>
+      </div>
+      <div class="suggest-tag">${escapeHtml(r.exchange)}</div>
+    </div>`).join('');
+  $('suggest').classList.add('open');
+  activeSuggest = -1;
+  $('suggest').querySelectorAll('.suggest-item').forEach(el => {
+    el.onclick = () => pickSuggest(el.dataset.sym);
+  });
+}
+$('newTicker').addEventListener('input', (e) => {
+  clearTimeout(searchTimer);
+  const q = e.target.value.trim();
+  if (!q) return closeSuggest();
+  searchTimer = setTimeout(() => runSearch(q), 200);
+});
+$('newTicker').addEventListener('keydown', (e) => {
+  const items = $('suggest').querySelectorAll('.suggest-item');
+  if (e.key === 'ArrowDown' && items.length) {
+    e.preventDefault();
+    activeSuggest = Math.min(activeSuggest + 1, items.length - 1);
+    items.forEach((el, i) => el.classList.toggle('active', i === activeSuggest));
+  } else if (e.key === 'ArrowUp' && items.length) {
+    e.preventDefault();
+    activeSuggest = Math.max(activeSuggest - 1, 0);
+    items.forEach((el, i) => el.classList.toggle('active', i === activeSuggest));
+  } else if (e.key === 'Enter') {
+    if (activeSuggest >= 0 && items[activeSuggest]) pickSuggest(items[activeSuggest].dataset.sym);
+    else if (e.target.value.trim()) pickSuggest(e.target.value.trim());
+  } else if (e.key === 'Escape') {
+    closeSuggest();
+  }
+});
+$('addBtn').onclick = () => {
+  const v = $('newTicker').value.trim();
+  if (v) pickSuggest(v);
+};
+document.addEventListener('click', (e) => { if (!e.target.closest('.add-bar')) closeSuggest(); });
+
+// ─── Settings interactions ───────────────────────────────────────
+$('refreshSlider').addEventListener('input', (e) => { $('refreshVal').textContent = e.target.value; });
+$('refreshSlider').addEventListener('change', (e) => { window.widget.setConfig({ refreshSec: parseInt(e.target.value, 10) }); });
+
+$('sortSeg').querySelectorAll('button').forEach(b => {
+  b.onclick = () => { window.widget.setConfig({ sortBy: b.dataset.sort }); };
+});
+
+$('toggleCompact').onclick = () => {
+  const on = !$('toggleCompact').classList.contains('on');
+  window.widget.setConfig({ compactMode: on });
+};
+$('toggleSpark').onclick = () => {
+  const on = !$('toggleSpark').classList.contains('on');
+  window.widget.setConfig({ showSparkline: on });
+};
+$('toggleExt').onclick = () => {
+  const on = !$('toggleExt').classList.contains('on');
+  window.widget.setConfig({ showExtendedHours: on });
+};
+$('exportBtn').onclick = () => window.widget.exportConfig();
+$('importBtn').onclick = () => window.widget.importConfig();
+
+// Credit links → open LinkedIn in browser
+const LINKEDIN_URL = 'https://www.linkedin.com/in/noam-nissan-b664793ba';
+$('creditLink').onclick  = (e) => { e.preventDefault(); window.widget.openExternal(LINKEDIN_URL); };
+$('creditLink2').onclick = (e) => { e.preventDefault(); window.widget.openExternal(LINKEDIN_URL); };
+
+// Pill drag is handled natively by Electron via -webkit-app-region: drag
+</script>
+</body>
+</html>

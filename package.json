@@ -1,0 +1,46 @@
+{
+  "name": "stocks-widget",
+  "productName": "Stocks Widget",
+  "version": "1.0.0",
+  "description": "A polished, always-on-top desktop widget for tracking live stock prices.",
+  "author": {
+    "name": "Noam Nissan",
+    "url": "https://www.linkedin.com/in/noam-nissan-b664793ba"
+  },
+  "license": "MIT",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win",
+    "pack": "electron-builder --dir"
+  },
+  "devDependencies": {
+    "electron": "^33.0.0",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "com.noamnissan.stocks-widget",
+    "productName": "Stocks Widget",
+    "files": [
+      "main.js",
+      "preload.js",
+      "index.html",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        { "target": "nsis", "arch": ["x64"] },
+        { "target": "portable", "arch": ["x64"] }
+      ],
+      "artifactName": "${productName}-${version}-${arch}-${ext}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Stocks Widget"
+    }
+  }
+}
