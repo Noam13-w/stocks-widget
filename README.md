@@ -2,9 +2,25 @@
 
 A polished, always-on-top desktop widget for tracking live stock prices on Windows. Built with Electron.
 
-[![Platform](https://img.shields.io/badge/platform-Windows-blue)](https://github.com/Noam13-w/stocks-widget/releases/latest)
-[![License](https://img.shields.io/badge/license-MIT-green)](./LICENSE)
-[![Built by Noam Nissan](https://img.shields.io/badge/built%20by-Noam%20Nissan-0A66C2?logo=linkedin&logoColor=white)](https://www.linkedin.com/in/noam-nissan-b664793ba)
+<p align="center">
+  <a href="https://github.com/Noam13-w/stocks-widget/releases/latest/download/Stocks-Widget-1.0.0-win-x64.zip">
+    <img src="https://img.shields.io/badge/⬇️%20DOWNLOAD%20FOR%20WINDOWS-1.0.0-22c55e?style=for-the-badge&labelColor=14532d" alt="Download for Windows" height="44" />
+  </a>
+  &nbsp;
+  <a href="https://github.com/Noam13-w/stocks-widget/releases/latest">
+    <img src="https://img.shields.io/badge/all%20releases-→-3b82f6?style=for-the-badge&labelColor=1e3a8a" alt="All releases" height="44" />
+  </a>
+</p>
+
+<p align="center">
+  <sub>110 MB · Windows 10/11 · 64-bit · No installer needed — unzip and run</sub>
+</p>
+
+<p align="center">
+  <a href="https://github.com/Noam13-w/stocks-widget/releases/latest"><img src="https://img.shields.io/badge/platform-Windows-blue" alt="Platform" /></a>
+  <a href="./LICENSE"><img src="https://img.shields.io/badge/license-MIT-green" alt="License" /></a>
+  <a href="https://www.linkedin.com/in/noam-nissan-b664793ba"><img src="https://img.shields.io/badge/built%20by-Noam%20Nissan-0A66C2?logo=linkedin&logoColor=white" alt="Built by Noam Nissan" /></a>
+</p>
 
 > 🇮🇱 [גלילה למטה להוראות בעברית](#-הוראות-בעברית)
 
