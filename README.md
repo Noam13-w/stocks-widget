@@ -31,6 +31,16 @@ Download the latest `Stocks Widget Setup.exe` from the [Releases](../../releases
 
 Download the latest `Stocks Widget-portable.exe` — no installation required, just run it.
 
+> **⚠️ "Windows protected your PC" warning?**
+>
+> When you first run the app, Windows SmartScreen will show a blue warning: *"Microsoft Defender SmartScreen prevented an unrecognized app from starting."* This is **normal for any new app from an independent developer** — the app simply isn't code-signed with a paid commercial certificate (~$300/year), and that's the only thing the warning means.
+>
+> **To run it:**
+> 1. Click **"More info"**
+> 2. Click **"Run anyway"**
+>
+> The warning is about *unknown publisher*, not about anything malicious. The full source code is in this repo — feel free to inspect or build from source instead.
+
 ### Option 3 — From source
 
 Requires [Node.js](https://nodejs.org) 18+.
