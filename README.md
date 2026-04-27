@@ -2,8 +2,11 @@
 
 A polished, always-on-top desktop widget for tracking live stock prices on Windows. Built with Electron.
 
-![Platform](https://img.shields.io/badge/platform-Windows-blue)
-![License](https://img.shields.io/badge/license-MIT-green)
+[![Platform](https://img.shields.io/badge/platform-Windows-blue)](https://github.com/Noam13-w/stocks-widget/releases/latest)
+[![License](https://img.shields.io/badge/license-MIT-green)](./LICENSE)
+[![Built by Noam Nissan](https://img.shields.io/badge/built%20by-Noam%20Nissan-0A66C2?logo=linkedin&logoColor=white)](https://www.linkedin.com/in/noam-nissan-b664793ba)
+
+> 🇮🇱 [גלילה למטה להוראות בעברית](#-הוראות-בעברית)
 
 ## Features
 
@@ -94,8 +97,76 @@ The installer ends up in `dist/`.
 
 ## Credits
 
-Built by **[Noam Nissan](https://www.linkedin.com/in/noam-nissan-b664793ba)**.
+Built by **[Noam Nissan](https://www.linkedin.com/in/noam-nissan-b664793ba)** — connect with me on LinkedIn 👋
 
 ## License
 
 [MIT](./LICENSE)
+
+---
+
+## 🇮🇱 הוראות בעברית
+
+**Stocks Widget** — ויג'דט דסקטופ למעקב אחרי מחירי מניות בזמן אמת על Windows. צף מעל כל החלונות שלך, מינימליסטי, חינמי לחלוטין.
+
+### תכונות
+
+- 📈 מחירים חיים למניות, ETFs, מדדים וקריפטו (דרך Yahoo Finance — בלי API key)
+- 📋 רשימות מעקב מרובות (Tech / Crypto / ETFs / מה שתרצה) עם טאבים
+- 📊 פאנל פירוט עם **גרף אינטראקטיבי** (1D / 5D / 1M / 3M / 1Y)
+- 🔔 **התראות מחיר** — נוטיפיקציה של Windows כשהמחיר חוצה את היעד
+- 🌅 מידע מ-**Pre-market** ו-**After-hours**
+- ✨ Sparklines אינטראדיי ברקע של כל שורה
+- 🎯 **מצב מכווץ** — בר זעיר שצף בפינת המסך, גריר מכל מקום
+- ⌨️ קיצור גלובלי **`Ctrl+Shift+S`** להצגה/הסתרה
+- 🖱️ קליק ימני על מניה: העתק סימול, צפה ב-Yahoo, הוסף התראה, הסר
+- 💾 ייצוא/ייבוא הגדרות כקובץ JSON
+- 🔒 פרטיות מלאה — שום דבר לא נשלח לאף שרת מלבד Yahoo Finance
+
+### התקנה
+
+1. הורד את הקובץ `Stocks-Widget-1.0.0-win-x64.zip` מ-[Releases](https://github.com/Noam13-w/stocks-widget/releases/latest)
+2. חלץ את הזיפ לכל מקום שתרצה (למשל `C:\Apps\Stocks Widget\`)
+3. הפעל את `Stocks Widget.exe`
+
+**אין צורך בהתקנה.**
+
+### ⚠️ אזהרת "Windows הגן על המחשב שלך"
+
+בהפעלה הראשונה Windows יציג מסך כחול עם הודעה: *"Microsoft Defender SmartScreen מנע הפעלה של אפליקציה לא מזוהה"*. זה **נורמלי לכל אפליקציה חדשה ממפתח פרטי** — האפליקציה פשוט לא חתומה בתעודת קוד מסחרית (~$300 לשנה), זה כל מה שהאזהרה אומרת.
+
+**כדי להפעיל:**
+1. לחץ על **"מידע נוסף"**
+2. לחץ על **"הפעל בכל זאת"**
+
+האזהרה מדברת על *מפרסם לא מזוהה*, לא על משהו זדוני. הקוד המלא פתוח לבדיקה כאן בריפו.
+
+### שימוש
+
+- **הוספת מניה:** הקלד סימול (או שם חברה) בתחתית — הצעות אוטומטיות יופיעו תוך כדי הקלדה
+- **קליק על שורה** פותח פאנל פרטים עם גרף ואפשרות להגדיר התראות
+- **קליק ימני על שורה** לפעולות מהירות: העתק סימול, פתח ב-Yahoo, הגדר התראה, הסר
+- **גרור שורות** לסידור מחדש (כשמצב המיון "Manual")
+- **טאבים בראש** — מעבר בין רשימות מעקב. לחץ `+` לרשימה חדשה. קליק ימני על טאב לעריכה/מחיקה
+- **כפתור `−`** מכווץ את הווידג'ט לבר זעיר. גרור אותו לכל מקום, לחץ `⤢` להרחבה
+- **כפתור `×`** שואל אם לסגור או רק למזער
+- **אייקון במגש המערכת** (System Tray) — קליק ימני להצגה/הסתרה/יציאה
+
+### קיצורי מקלדת
+
+| קיצור | פעולה |
+|---|---|
+| `Ctrl+Shift+S` | הצג/הסתר ויג'דט (גלובלי) |
+| `Enter` | הוסף מניה (בשדה ההקלדה) |
+| `↑` / `↓` | נווט בהצעות |
+| `Esc` | סגור פאנל / dropdown |
+
+### פרטיות ונתונים
+
+- כל נתוני המחירים נמשכים ישירות מ-Yahoo Finance — **שום דבר לא נשלח לשום שרת אחר**
+- כל ההגדרות שלך (רשימות, התראות, מיקום חלון) נשמרות מקומית ב-`%APPDATA%\stocks-widget\config.json`
+- בלי טראקינג, בלי אנליטיקס, בלי הרשמה
+
+### קרדיט
+
+נבנה על ידי **[נעם ניסן](https://www.linkedin.com/in/noam-nissan-b664793ba)** — נשמח להתחבר בלינקדאין 👋
